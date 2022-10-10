@@ -11,7 +11,6 @@ namespace ToDoListLibrary
 {
     public class ToDo : IComparable<ToDo>
     {
-        [JsonConstructor]
         public ToDo(string name, string startTime, string description)
         {
             Name = name;             
@@ -27,7 +26,11 @@ namespace ToDoListLibrary
         [StringLength(100, MinimumLength = 0, ErrorMessage = "Описание должно содержать до 100 символов")]
         public string Description { get; set; }
 
-        public List<string> GetInfo()
+        /// <summary>
+        /// Метод возвращает список свойств класса в формате List
+        /// </summary>
+        /// <returns></returns>
+        private List<string> GetInfo()
         {
             return new List<string> {
             $"\nДело:",
@@ -37,6 +40,9 @@ namespace ToDoListLibrary
             $"Статус: {GetStatus(this)}"};
         }
 
+        /// <summary>
+        /// Метод изменяет свойство "Status"
+        /// </summary>
         public void ChangeStatus()
         {
             if (Status == ToDoStatus.OPEN)
@@ -44,6 +50,11 @@ namespace ToDoListLibrary
             else Status = ToDoStatus.OPEN;
         }
 
+        /// <summary>
+        /// Метод возвращает статус выполнения в формате string
+        /// </summary>
+        /// <param name="toDo"></param>
+        /// <returns></returns>
         private string GetStatus(ToDo toDo)
         {
             if (toDo.Status == ToDoStatus.CLOSED)
