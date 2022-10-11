@@ -10,7 +10,7 @@ namespace ToDoListLibrary.Validators
     {
         public bool IsValid(ToDo value, out string errorMessage)
         {
-            if (TimeOnly.TryParse(value.StartTime, out _))
+            if (TimeOnly.TryParse(value.StartTime.ToString(), out _))
             {
                 errorMessage = "";
                 return true;

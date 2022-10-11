@@ -18,12 +18,20 @@ namespace ToDoListLibrary
 
         public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
         {
-            return DateOnly.Parse(reader.Value.ToString());
+            if (reader.TokenType == JsonToken.Null)
+            {
+                return null;
+            }
+            var strDate = reader.Value.ToString();
+            if (DateOnly.TryParseExact(strDate, "dd.MM.yyyy", out DateOnly date))
+                return date;
+            return null;
         }
 
         public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
         {
-            throw new NotImplementedException();
+            if (value is DateOnly date)
+                writer.WriteValue(date.ToString());
         }
     }
 }

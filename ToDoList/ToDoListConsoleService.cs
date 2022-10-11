@@ -11,7 +11,7 @@ namespace ToDoList
     internal static class ToDoListConsoleService
     {
         static string? name;
-        static string? time;
+        static TimeOnly time;
         static string? description;
         static DateOnly today = DateOnly.FromDateTime(DateTime.Now);
         public static void WorkingWithToDoRepository(ToDoListRepository repo)
@@ -27,10 +27,10 @@ namespace ToDoList
                 switch (command)
                 {
                     case "past":
-                        Create(repo, today.AddDays(-1).ToString());
+                        Create(repo, today.AddDays(-1));
                         break;
                     case "create":
-                        Create(repo, today.ToString());
+                        Create(repo, today);
                         break;
                     case "copy":
                         repo.CreateToDoListAsYesterday();
@@ -80,7 +80,7 @@ namespace ToDoList
             list.Add(new ToDo(name!, time!, description!));
         }
 
-        private static void Create(ToDoListRepository repo, string date)
+        private static void Create(ToDoListRepository repo, DateOnly date)
         {
             var listToDo = new List<ToDo>();
             string command;
@@ -94,7 +94,7 @@ namespace ToDoList
                     break;
                 else Console.WriteLine("Такой команды не существует! Повторите ввод:");
             }
-            repo.CreateToDoList(date, listToDo);
+            repo.AddToDoList(date, listToDo);
         }
 
         private static void UpdateToDo(ToDoListRepository repo)
@@ -109,7 +109,7 @@ namespace ToDoList
         private static void InputConstruсtor()
         {
             name = InputName();
-            time = InputTime();
+            time = TimeOnly.Parse(InputTime());
             description = InputDescription();
         }
 

@@ -11,7 +11,7 @@ namespace ToDoListLibrary
 {
     public class ToDo : IComparable<ToDo>
     {
-        public ToDo(string name, string startTime, string description)
+        public ToDo(string name, TimeOnly startTime, string description)
         {
             Name = name;             
             StartTime = startTime;
@@ -21,7 +21,7 @@ namespace ToDoListLibrary
 
         [StringLength(20, MinimumLength = 1, ErrorMessage = "Наименование должно содержать от 1 до 20 символов")]
         public string Name { get; set; }
-        public string StartTime { get; set; }
+        public TimeOnly StartTime { get; set; }
         public ToDoStatus Status { get; set; }
         [StringLength(100, MinimumLength = 0, ErrorMessage = "Описание должно содержать до 100 символов")]
         public string Description { get; set; }
@@ -53,8 +53,6 @@ namespace ToDoListLibrary
         /// <summary>
         /// Метод возвращает статус выполнения в формате string
         /// </summary>
-        /// <param name="toDo"></param>
-        /// <returns></returns>
         private string GetStatus(ToDo toDo)
         {
             if (toDo.Status == ToDoStatus.CLOSED)
@@ -66,9 +64,9 @@ namespace ToDoListLibrary
 
         public int CompareTo(ToDo other)
         {
-            if (this.StartTime.Equals(other.StartTime, StringComparison.CurrentCulture))
+            if (this.StartTime.Equals(other.StartTime))
                 return this.Name.CompareTo(other.Name);
-            return TimeOnly.Parse(StartTime).CompareTo(TimeOnly.Parse(other.StartTime));
+            return StartTime.CompareTo(other.StartTime);
         }
     }
 }
