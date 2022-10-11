@@ -13,7 +13,7 @@ namespace ToDoList
         static string? name;
         static TimeOnly time;
         static string? description;
-        static DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+        static DateTime today = DateTime.Today;
         public static void WorkingWithToDoRepository(ToDoListRepository repo)
         {           
             repo.Notify += (message) => Console.WriteLine(message);
@@ -40,7 +40,7 @@ namespace ToDoList
                         break;
                     case "old":
                         var date = InputDate();                       
-                        PrintAll(DateOnly.Parse(date), repo);
+                        PrintAll(DateTime.Parse(date), repo);
                         break;
                     case "delete":
                         name = InputName();
@@ -80,7 +80,7 @@ namespace ToDoList
             list.Add(new ToDo(name!, time!, description!));
         }
 
-        private static void Create(ToDoListRepository repo, DateOnly date)
+        private static void Create(ToDoListRepository repo, DateTime date)
         {
             var listToDo = new List<ToDo>();
             string command;
@@ -149,7 +149,7 @@ namespace ToDoList
             File.AppendAllText(filePath, $"{DateTime.Now} {message}{Environment.NewLine}");
         }
 
-        private static void PrintAll(DateOnly date, ToDoListRepository repo)
+        private static void PrintAll(DateTime date, ToDoListRepository repo)
         {
             var toDoList = repo.GetList(date);
             if (toDoList.Count() == 0)

@@ -16,11 +16,12 @@ namespace ToDoListLibrary
     public class ToDoListRepository
     {
         #region Приватные поля и константы
-        private Dictionary<DateOnly, List<ToDo>> _toDoListMap;
+ //       [JsonConverter(typeof(DateOnlyCoverter))]
+        private Dictionary<DateTime, List<ToDo>> _toDoListMap;
         private List<IValidator> _validators;
- //       [JsonProperty]
-        [JsonConverter(typeof(DateOnlyCoverter))]
-        private DateOnly _today; 
+        //[JsonProperty]
+        //[JsonConverter(typeof(DateOnlyCoverter))]
+        private DateTime _today; 
         private List<ToDo> _listToday;
         private static string path;
         private const string WORKER_PATH = "ToDoListMapDataset.json";
@@ -29,13 +30,13 @@ namespace ToDoListLibrary
 
         public ToDoListRepository(ProjectType type)
         {
-            _toDoListMap = new Dictionary<DateOnly, List<ToDo>>();
             _validators = new List<IValidator>();
             this.RegisterValidator(new TimeValidator());
-            _today = DateOnly.FromDateTime(DateTime.Now);
+            _today = DateTime.Today;
             path = type == ProjectType.WORKER ? WORKER_PATH : TEST_PATH;
             if (File.Exists(FileNameDataSet()))
                 this.Load();
+            else _toDoListMap = new Dictionary<DateTime, List<ToDo>>();
             _listToday = GetToDoListToday();
         }
 
@@ -63,7 +64,7 @@ namespace ToDoListLibrary
         /// <summary>
         /// Метод возвращает список дел на заданную дату в формате IEnumerable
         /// </summary>
-        public IEnumerable<ToDo> GetList(DateOnly date)
+        public IEnumerable<ToDo> GetList(DateTime date)
         {
             if (_toDoListMap.ContainsKey(date))
                 return _toDoListMap[date];
@@ -84,7 +85,7 @@ namespace ToDoListLibrary
         /// <summary>
         /// Метод добавляет заданный список дел на заданную дату
         /// </summary>
-        public void AddToDoList(DateOnly date, List<ToDo> list)
+        public void AddToDoList(DateTime date, List<ToDo> list)
         {
             _toDoListMap[date] = list;
             list.Sort();
@@ -204,15 +205,20 @@ namespace ToDoListLibrary
             File.WriteAllText(FileNameDataSet(), json);
         }
 
+        private void SaveKeys()
+        {
+            var json = JsonConvert.SerializeObject(_toDoListMap);
+            File.WriteAllText(FileNameDataSet(), json);
+        }
         /// <summary>
         /// Метод десериализует данные репозитория из json-файла
         /// </summary>
         private void Load()
         {
             var json = File.ReadAllText(FileNameDataSet());
-            var loadedList = JsonConvert.DeserializeObject<Dictionary<DateOnly, List<ToDo>>>(json);
+            var loadedList = JsonConvert.DeserializeObject<Dictionary<DateTime, List<ToDo>>>(json);
             if (loadedList != null)
-                _toDoListMap = new Dictionary<DateOnly, List<ToDo>>(loadedList);
+                _toDoListMap = new Dictionary<DateTime, List<ToDo>>(loadedList);
         }
     }
 }

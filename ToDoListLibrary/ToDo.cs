@@ -21,6 +21,7 @@ namespace ToDoListLibrary
 
         [StringLength(20, MinimumLength = 1, ErrorMessage = "Наименование должно содержать от 1 до 20 символов")]
         public string Name { get; set; }
+        [JsonConverter(typeof(TimeOnlyConverter))]
         public TimeOnly StartTime { get; set; }
         public ToDoStatus Status { get; set; }
         [StringLength(100, MinimumLength = 0, ErrorMessage = "Описание должно содержать до 100 символов")]
