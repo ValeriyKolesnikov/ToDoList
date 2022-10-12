@@ -33,7 +33,7 @@ namespace ToDoList
                         Create(repo, today);
                         break;
                     case "copy":
-                        repo.CreateToDoListAsYesterday();
+                        repo.AddListAsYesterday();
                         break;
                     case "print":
                         PrintAll(today, repo);
@@ -74,10 +74,10 @@ namespace ToDoList
             repo.AddToDo(new ToDo(name!, time!, description!));
         }
 
-        private static void Add(List<ToDo> list)
+        private static void Add(ToDoListRepository repo, List<ToDo> list)
         {
-            InputConstruсtor();
-            list.Add(new ToDo(name!, time!, description!));
+            InputConstruсtor();           
+            repo.AddToDoInList(new ToDo(name!, time!, description!), list);
         }
 
         private static void Create(ToDoListRepository repo, DateTime date)
@@ -89,21 +89,22 @@ namespace ToDoList
                 Console.WriteLine("Добавить новое дело в список? y/n");
                 command = Console.ReadLine();
                 if (command == "y")
-                    Add(listToDo);
+                    Add(repo, listToDo);
                 else if (command == "n")
                     break;
                 else Console.WriteLine("Такой команды не существует! Повторите ввод:");
             }
-            repo.AddToDoList(date, listToDo);
+            repo.AddList(date, listToDo);
         }
 
         private static void UpdateToDo(ToDoListRepository repo)
         {
-            InputConstruсtor();
+            InputName();
             var toDo = repo.Read(name!);
+            Console.WriteLine("Введите новые параметры");
             if (toDo == null)
                 throw new NotFoundToDoException(name!);
-            repo.Update(new ToDo(name!, time!, description!));
+            repo.Update(toDo, new ToDo(name!, time!, description!));
         }
 
         private static void InputConstruсtor()

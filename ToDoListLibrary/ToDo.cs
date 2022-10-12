@@ -20,10 +20,10 @@ namespace ToDoListLibrary
         }
 
         [StringLength(20, MinimumLength = 1, ErrorMessage = "Наименование должно содержать от 1 до 20 символов")]
-        public string Name { get; set; }
+        public string Name { get; init; }
         [JsonConverter(typeof(TimeOnlyConverter))]
-        public TimeOnly StartTime { get; set; }
-        public ToDoStatus Status { get; set; }
+        public TimeOnly StartTime { get; init; }
+        public ToDoStatus Status { get; private set; }
         [StringLength(100, MinimumLength = 0, ErrorMessage = "Описание должно содержать до 100 символов")]
         public string Description { get; set; }
 
@@ -68,6 +68,18 @@ namespace ToDoListLibrary
             if (this.StartTime.Equals(other.StartTime))
                 return this.Name.CompareTo(other.Name);
             return StartTime.CompareTo(other.StartTime);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is ToDo todo &&
+                   Name == todo.Name &&
+                   StartTime.Equals(todo.StartTime);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Name, StartTime);
         }
     }
 }

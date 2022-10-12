@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,39 +11,33 @@ using ToDoListLibrary.Validators;
 namespace ToDoListLibrary
 {
     /// <summary>
-    /// Класс-репозиторий. Хранит списки дел на определенную дату в формате Dictionary
-    /// Key - Дата в формате  string, value - список дел в формате List<ToDo>
+    /// Класс-репозиторий. Хранит списки дел на определенную дату в формате Dictionary, где
+    /// key - дата в формате  string, value - список дел в формате List<ToDo>
     /// </summary>
     public class ToDoListRepository
     {
         #region Приватные поля и константы
- //       [JsonConverter(typeof(DateOnlyCoverter))]
         private Dictionary<DateTime, List<ToDo>> _toDoListMap;
         private List<IValidator> _validators;
-        //[JsonProperty]
-        //[JsonConverter(typeof(DateOnlyCoverter))]
         private DateTime _today; 
         private List<ToDo> _listToday;
-        private static string path;
-        private const string WORKER_PATH = "ToDoListMapDataset.json";
-        private const string TEST_PATH = "ToDoListMapDatasetTest.json";
         #endregion
 
-        public ToDoListRepository(ProjectType type)
+        public ToDoListRepository()
         {
             _validators = new List<IValidator>();
             this.RegisterValidator(new TimeValidator());
             _today = DateTime.Today;
-            path = type == ProjectType.WORKER ? WORKER_PATH : TEST_PATH;
             if (File.Exists(FileNameDataSet()))
                 this.Load();
-            else _toDoListMap = new Dictionary<DateTime, List<ToDo>>();
+            else 
+                _toDoListMap = new Dictionary<DateTime, List<ToDo>>();
             _listToday = GetToDoListToday();
         }
 
-        public ToDoListRepository() : this(ProjectType.WORKER) { }
 
         public event Action<string>? Notify;
+
         /// <summary>
         /// Метод регистрирует валидатор (добавляет в список валидаторов репозитория)
         /// </summary>
@@ -62,6 +57,25 @@ namespace ToDoListLibrary
         }
 
         /// <summary>
+        /// Метод осуществляет валидацию по атрибутам
+        /// </summary>
+        /// <exception cref="ValidateException"></exception>
+        private void AttributValidate(ToDo value)
+        {
+            var context = new ValidationContext(value);
+            var results = new List<ValidationResult>();
+            if (!Validator.TryValidateObject(value, context, results, true))
+            {
+                foreach (ValidationResult error in results)
+                {
+                    throw new ValidateException(value, error.ErrorMessage);
+                }
+            }
+        }
+
+        public IReadOnlyDictionary<DateTime, List<ToDo>> GetMap() => _toDoListMap;
+
+        /// <summary>
         /// Метод возвращает список дел на заданную дату в формате IEnumerable
         /// </summary>
         public IEnumerable<ToDo> GetList(DateTime date)
@@ -73,7 +87,7 @@ namespace ToDoListLibrary
 
         /// <summary>
         /// Метод возвращает список дел на сегодня.
-        /// Если список дел отсутствует, то создает новый пустой список
+        /// Если список дел отсутствует, то сначала создает новый пустой список
         /// </summary>
         private List<ToDo> GetToDoListToday()
         {
@@ -83,25 +97,34 @@ namespace ToDoListLibrary
         }
         
         /// <summary>
+        /// Метод добавляет заданное дело в заданный список дел
+        /// </summary>
+        public void AddToDoInList(ToDo toDo, List<ToDo> list)
+        {
+            Validate(toDo);
+            AttributValidate(toDo);
+            list.Add(toDo);
+        }
+
+        /// <summary>
         /// Метод добавляет заданный список дел на заданную дату
         /// </summary>
-        public void AddToDoList(DateTime date, List<ToDo> list)
+        public void AddList(DateTime date, List<ToDo> list)
         {
             _toDoListMap[date] = list;
             list.Sort();
             this.Save();
-            Notify?.Invoke($"Добавлен новый список дел на {date}");
+            Notify?.Invoke($"Добавлен новый список дел на {date.Date}");
         }
 
         /// <summary>
         /// Метод создает список дел на сегодня на основе вчерашнего дня
         /// </summary>
-        public void CreateToDoListAsYesterday()
+        public void AddListAsYesterday()
         {
             var yesterday = _today.AddDays(-1);
-            AddToDoList(_today, new List<ToDo>(_toDoListMap[yesterday]));
-            this.Save();
-            Notify?.Invoke($"Добавлен новый список дел на {_today}");
+            AddList(_today, new List<ToDo>(_toDoListMap[yesterday]));
+            Notify?.Invoke($"Добавлен новый список дел на {_today.Date}");
         }
 
         /// <summary>
@@ -111,14 +134,23 @@ namespace ToDoListLibrary
         public void AddToDo(ToDo item)
         {
             Validate(item);
-            var listToday = _toDoListMap[_today];
-            foreach (ToDo toDo in listToday)
-                if (toDo.Equals(item))
-                {
-                    throw new ExistingToDoException(toDo);
-                }
-            listToday.Add(item);
-            listToday.Sort();
+            AttributValidate(item);
+            List<ToDo> listToday;
+            if (_toDoListMap.ContainsKey(_today))
+            {
+                listToday = _toDoListMap[_today];
+                foreach (ToDo toDo in listToday)
+                    if (toDo.Equals(item))
+                    {
+                        throw new ExistingToDoException(toDo);
+                    }
+                listToday.Add(item);
+                listToday.Sort();
+            } else
+            {
+                listToday = new List<ToDo>() {item};
+                _toDoListMap[_today] = listToday;
+            }
             this.Save();
             Notify?.Invoke($"Добавлено новое дело: {item}");
         }
@@ -129,6 +161,7 @@ namespace ToDoListLibrary
         /// <exception cref="NotFoundToDoException"></exception>
         public ToDo Read(string name)
         {
+            _listToday = GetToDoListToday();
             var toDo = _listToday
                 .SingleOrDefault(toDo => toDo.Name.Equals(name, StringComparison.CurrentCulture));
             if (toDo == null)
@@ -151,20 +184,31 @@ namespace ToDoListLibrary
         /// Метод вносит изменения в заданное дедло из списка дел на сегодня
         /// </summary>
         /// <exception cref="NotFoundToDoException"></exception>
-        public void Update(ToDo item)
+        public void Update(ToDo item, ToDo updateItem)
         {
             Validate(item);
+            Validate(updateItem);
             for (int i = 0; i < _listToday.Count; i++)
             {
                 if (_listToday[i].Equals(item))
                 {
-                    _listToday[i] = item;
+                    _listToday[i] = updateItem;
                     this.Save();
                     Notify?.Invoke($"Обновлено дело: {item.Name}");
                     return;
                 }                
             }
             throw new NotFoundToDoException(item.Name);
+        }
+
+        /// <summary>
+        /// Метод удаляет список дел на заданную дату
+        /// </summary>
+        public void DeleteList(DateTime date)
+        {
+            _toDoListMap.Remove(date);
+            this.Save();
+            Notify?.Invoke($"Удален список дел на {date}");
         }
 
         /// <summary>
@@ -175,7 +219,6 @@ namespace ToDoListLibrary
             Read(name).ChangeStatus();
             this.Save();
             Notify?.Invoke($"Изменен статус дела: {name}");
-
         }
 
         /// <summary>
@@ -194,7 +237,7 @@ namespace ToDoListLibrary
         /// Метод возвращает абсолютный путь файла с данными репозитория
         /// </summary>
         /// <returns></returns>
-        private static string FileNameDataSet() => Path.GetFullPath(path);
+        private static string FileNameDataSet() => Path.GetFullPath("ToDoListMapDataset.json");
         
         /// <summary>
         /// Метод сериализует данные репозитория в json-файл 
@@ -205,11 +248,6 @@ namespace ToDoListLibrary
             File.WriteAllText(FileNameDataSet(), json);
         }
 
-        private void SaveKeys()
-        {
-            var json = JsonConvert.SerializeObject(_toDoListMap);
-            File.WriteAllText(FileNameDataSet(), json);
-        }
         /// <summary>
         /// Метод десериализует данные репозитория из json-файла
         /// </summary>
@@ -219,6 +257,7 @@ namespace ToDoListLibrary
             var loadedList = JsonConvert.DeserializeObject<Dictionary<DateTime, List<ToDo>>>(json);
             if (loadedList != null)
                 _toDoListMap = new Dictionary<DateTime, List<ToDo>>(loadedList);
+            else _toDoListMap = new Dictionary<DateTime, List<ToDo>>();
         }
     }
 }

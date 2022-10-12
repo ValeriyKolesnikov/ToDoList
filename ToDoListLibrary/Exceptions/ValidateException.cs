@@ -6,7 +6,7 @@ namespace ToDoListLibrary.Exceptions
     {
         public ValidateException(ToDo toDo, string errorMessage)
         {
-            Console.WriteLine($"Ошибка валидаци: Дело \"{toDo.Name}\" : {errorMessage}");
+            Console.WriteLine($"Ошибка валидации: Дело \"{toDo.Name}\" : {errorMessage}");
         }
     }
 }

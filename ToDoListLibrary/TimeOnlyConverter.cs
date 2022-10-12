@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace ToDoListLibrary
 {
+    /// <summary>
+    /// Класс-конвертор типа TimeOnly в формат Json
+    /// </summary>
     internal class TimeOnlyConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)

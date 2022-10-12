@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ToDoListLibrary
 {
-    public class DateOnlyCoverter : JsonConverter
+    public class DateOnlyConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {
