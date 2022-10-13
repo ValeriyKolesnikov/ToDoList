@@ -1,12 +1,6 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using ToDoListLibrary.Exceptions;
-using ToDoListLibrary.Validators;
 
 namespace ToDoListLibrary
 {
@@ -18,43 +12,17 @@ namespace ToDoListLibrary
     {
         #region Приватные поля и константы
         private Dictionary<DateTime, List<ToDo>> _toDoListMap;
-        private List<IValidator> _validators;
         private DateTime _today; 
-        private List<ToDo> _listToday;
         #endregion
 
         public ToDoListRepository()
         {
-            _validators = new List<IValidator>();
-            this.RegisterValidator(new TimeValidator());
             _today = DateTime.Today;
             if (File.Exists(FileNameDataSet()))
                 this.Load();
             else 
                 _toDoListMap = new Dictionary<DateTime, List<ToDo>>();
-            _listToday = GetToDoListToday();
-        }
-
-
-        public event Action<string>? Notify;
-
-        /// <summary>
-        /// Метод регистрирует валидатор (добавляет в список валидаторов репозитория)
-        /// </summary>
-        private void RegisterValidator(IValidator validator) => _validators.Add(validator);
-
-        /// <summary>
-        /// Метод осуществляет валидацию по всем валидаторам
-        /// </summary>
-        /// <exception cref="ValidateException"></exception>
-        private void Validate(ToDo value)
-        {
-            foreach (IValidator validator in _validators)
-            {
-                if (!validator.IsValid(value, out string errorMessage))
-                    throw new ValidateException(value, errorMessage);
-            }
-        }
+        }        
 
         /// <summary>
         /// Метод осуществляет валидацию по атрибутам
@@ -73,6 +41,18 @@ namespace ToDoListLibrary
             }
         }
 
+        /// <summary>
+        /// Метод возвращает список дел на сегодня.
+        /// Если список дел отсутствует, то сначала создает новый пустой список
+        /// </summary>
+        private List<ToDo> GetToDoListToday()
+        {
+            if (!_toDoListMap.ContainsKey(_today))
+                _toDoListMap[_today] = new List<ToDo>();
+            return _toDoListMap[_today];
+        }
+
+        public event Action<string>? Notify;
         public IReadOnlyDictionary<DateTime, List<ToDo>> GetMap() => _toDoListMap;
 
         /// <summary>
@@ -84,24 +64,12 @@ namespace ToDoListLibrary
                 return _toDoListMap[date];
             return Enumerable.Empty<ToDo>();
         }
-
-        /// <summary>
-        /// Метод возвращает список дел на сегодня.
-        /// Если список дел отсутствует, то сначала создает новый пустой список
-        /// </summary>
-        private List<ToDo> GetToDoListToday()
-        {
-            if (!_toDoListMap.ContainsKey(_today))
-            _toDoListMap[_today] = new List<ToDo>();
-            return _toDoListMap[_today];
-        }
         
         /// <summary>
         /// Метод добавляет заданное дело в заданный список дел
         /// </summary>
         public void AddToDoInList(ToDo toDo, List<ToDo> list)
         {
-            Validate(toDo);
             AttributValidate(toDo);
             list.Add(toDo);
         }
@@ -128,12 +96,11 @@ namespace ToDoListLibrary
         }
 
         /// <summary>
-        /// Метод добавляет дело в существующий список дел на сегодня
+        /// Метод добавляет дело в список дел на сегодня
         /// </summary>
         /// <exception cref="ExistingToDoException"></exception>
         public void AddToDo(ToDo item)
         {
-            Validate(item);
             AttributValidate(item);
             List<ToDo> listToday;
             if (_toDoListMap.ContainsKey(_today))
@@ -161,8 +128,7 @@ namespace ToDoListLibrary
         /// <exception cref="NotFoundToDoException"></exception>
         public ToDo Read(string name)
         {
-            _listToday = GetToDoListToday();
-            var toDo = _listToday
+            var toDo = GetToDoListToday()
                 .SingleOrDefault(toDo => toDo.Name.Equals(name, StringComparison.CurrentCulture));
             if (toDo == null)
                 throw new NotFoundToDoException(name);
@@ -175,24 +141,25 @@ namespace ToDoListLibrary
         public void Delete(string name)
         {
             var toDo = Read(name);
-            _listToday.RemoveAll(toDo => toDo.Name.Equals(name, StringComparison.CurrentCulture));
+            GetToDoListToday().RemoveAll(toDo => toDo.Name.Equals(name, StringComparison.CurrentCulture));
             this.Save();
             Notify?.Invoke($"Удалено дело: {toDo.Name}");
         }
 
         /// <summary>
-        /// Метод вносит изменения в заданное дедло из списка дел на сегодня
+        /// Метод вносит изменения в заданное дело из списка дел на сегодня
         /// </summary>
         /// <exception cref="NotFoundToDoException"></exception>
         public void Update(ToDo item, ToDo updateItem)
         {
-            Validate(item);
-            Validate(updateItem);
-            for (int i = 0; i < _listToday.Count; i++)
+            AttributValidate(item);
+            AttributValidate(updateItem);
+            var listToday = GetToDoListToday();
+            for (int i = 0; i < listToday.Count; i++)
             {
-                if (_listToday[i].Equals(item))
+                if (listToday[i].Equals(item))
                 {
-                    _listToday[i] = updateItem;
+                    listToday[i] = updateItem;
                     this.Save();
                     Notify?.Invoke($"Обновлено дело: {item.Name}");
                     return;
@@ -226,7 +193,8 @@ namespace ToDoListLibrary
         /// </summary>
         public void CloseAll()
         {
-            foreach (ToDo item in _listToday)
+            var listToday = GetToDoListToday();
+            foreach (ToDo item in listToday)
             if (item.Status == ToDoStatus.OPEN) 
                     item.ChangeStatus();
             this.Save();

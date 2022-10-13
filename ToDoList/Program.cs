@@ -16,11 +16,6 @@ catch(InputException ex)
     Console.WriteLine(ex.Message);
 }
 
-catch (NotFoundFileException ex)
-{
-    Console.WriteLine(ex.Message);
-}
-
 catch (NotFoundToDoException ex)
 {
     Console.WriteLine(ex.Message);
