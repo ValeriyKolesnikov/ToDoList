@@ -1,7 +1,6 @@
 ﻿
 using ToDoList;
 
-
 var service = new ToDoListConsoleService();
 
 try

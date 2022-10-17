@@ -63,6 +63,18 @@ namespace ToDoListLibrary.Tests
         }
 
         [Test]
+        public void AddItemInListTest()
+        {
+            var toDo = new ToDo("Дело 14", TimeOnly.Parse("16:00"), "Нужно добавить дело в список");
+            var list = new List<ToDo>()
+            { new ToDo ("Дело 15", TimeOnly.Parse("16:00"), "Дело первое"),
+            new ToDo ("Дело 16", TimeOnly.Parse("17:00"), "Дело второе")};            
+            repo.AddToDoInList(toDo,list);
+            Assert.That(list.Count().Equals(3));
+            Assert.IsTrue(list[2].Equals(toDo));
+        }
+
+        [Test]
         public void ReadItemTest()
         {
             var toDo = new ToDo("Дело 6", TimeOnly.Parse("10:00"), "Нужно прочитать это дело");
