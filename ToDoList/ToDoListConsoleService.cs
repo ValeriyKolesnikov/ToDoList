@@ -8,16 +8,24 @@ using ToDoListLibrary.Exceptions;
 
 namespace ToDoList
 {
-    internal static class ToDoListConsoleService
+    internal class ToDoListConsoleService
     {
-        static string? name;
-        static TimeOnly time;
-        static string? description;
-        static DateTime today = DateTime.Today;
-        public static void WorkingWithToDoRepository(ToDoListRepository repo)
+        private string? name;
+        private TimeOnly time;
+        private string? description;
+        private DateTime _today;
+        public ToDoListRepository Repository { get; set; }
+
+        public ToDoListConsoleService()
+        {
+            Repository = new ToDoListRepository();
+            _today = DateTime.Today;
+        }
+
+        public void WorkingWithToDoRepository()
         {           
-            repo.Notify += (message) => Console.WriteLine(message);
-            repo.Notify += WritingToFile;
+            Repository.Notify += (message) => Console.WriteLine(message);
+            Repository.Notify += WritingToFile;
             string command;
             List<ToDo> list;
             do
@@ -27,37 +35,37 @@ namespace ToDoList
                 switch (command)
                 {
                     case "past":
-                        Create(repo, today.AddDays(-1));
+                        Create(_today.AddDays(-1));
                         break;
                     case "create":
-                        Create(repo, today);
+                        Create(_today);
                         break;
                     case "copy":
-                        repo.AddListAsYesterday();
+                        Repository.AddListAsYesterday();
                         break;
                     case "print":
-                        PrintAll(today, repo);
+                        PrintAll(_today);
                         break;
                     case "old":
                         var date = InputDate();                       
-                        PrintAll(DateTime.Parse(date), repo);
+                        PrintAll(date);
                         break;
                     case "delete":
                         name = InputName();
-                        repo.Delete(name);
+                        Repository.Delete(name);
                         break;
                     case "add":
-                        Add(repo);
+                        Add();
                         break;
                     case "update":
-                        UpdateToDo(repo);
+                        UpdateToDo();
                         break;
                     case "status":
                         name = InputName();
-                        repo.ChangeStatus(name);
+                        Repository.ChangeStatus(name);
                         break;
                     case "close":
-                        repo.CloseAll();
+                        Repository.CloseAll();
                         break;
                     case "exit":
                         break;
@@ -68,19 +76,19 @@ namespace ToDoList
             while (command != "exit");
         }
 
-        private static void Add(ToDoListRepository repo)
+        private void Add()
         {
             InputConstruсtor();
-            repo.AddToDo(new ToDo(name!, time!, description!));
+            Repository.AddToDo(new ToDo(name!, time!, description!));
         }
 
-        private static void Add(ToDoListRepository repo, List<ToDo> list)
+        private void Add(List<ToDo> list)
         {
             InputConstruсtor();           
-            repo.AddToDoInList(new ToDo(name!, time!, description!), list);
+            Repository.AddToDoInList(new ToDo(name!, time!, description!), list);
         }
 
-        private static void Create(ToDoListRepository repo, DateTime date)
+        private void Create(DateTime date)
         {
             var listToDo = new List<ToDo>();
             string command;
@@ -89,59 +97,65 @@ namespace ToDoList
                 Console.WriteLine("Добавить новое дело в список? y/n");
                 command = Console.ReadLine();
                 if (command == "y")
-                    Add(repo, listToDo);
+                    Add(listToDo);
                 else if (command == "n")
                     break;
                 else Console.WriteLine("Такой команды не существует! Повторите ввод:");
             }
-            repo.AddList(date, listToDo);
+            Repository.AddList(date, listToDo);
         }
 
-        private static void UpdateToDo(ToDoListRepository repo)
+        private void UpdateToDo()
         {
             InputName();
-            var toDo = repo.Read(name!);
+            var toDo = Repository.Read(name!);
             Console.WriteLine("Введите новые параметры");
             if (toDo == null)
                 throw new NotFoundToDoException(name!);
-            repo.Update(toDo, new ToDo(name!, time!, description!));
+            Repository.Update(toDo, new ToDo(name!, time!, description!));
         }
 
-        private static void InputConstruсtor()
+        private void InputConstruсtor()
         {
             name = InputName();
-            time = TimeOnly.Parse(InputTime());
+            time = InputTime();
             description = InputDescription();
         }
 
-        private static string InputName()
+        private string InputName()
         {
             Console.WriteLine("Введите наименование дела:");
             return Console.ReadLine();
         }
 
-        private static string InputDescription()
+        private string InputDescription()
         {
             Console.WriteLine("Введите описание дела:");
             return Console.ReadLine();
         }        
 
-        private static string InputDate()
+        private DateTime InputDate()
         {
             while (true)
             {
                 Console.WriteLine("Введите дату в формате \"dd.MM.yyyy\"");
-                var date = Console.ReadLine();
-                if (DateOnly.TryParse(date, out _))
+                var input = Console.ReadLine();
+                if (DateTime.TryParse(input, out DateTime date))
                     return date;
                 Console.WriteLine("Неверный формат даты");
             }
         }
 
-        private static string InputTime()
+        private static TimeOnly InputTime()
         {
-            Console.WriteLine("Введите время в формате \"HH:mm\"");
-            return Console.ReadLine();
+            while (true)
+            {
+                Console.WriteLine("Введите время в формате \"HH:mm\"");
+                var input = Console.ReadLine();
+                if (TimeOnly.TryParse(input, out TimeOnly time))
+                    return time;
+                Console.WriteLine("Неверный формат времени");
+            }
         }
 
         private static void WritingToFile(string message)
@@ -150,9 +164,9 @@ namespace ToDoList
             File.AppendAllText(filePath, $"{DateTime.Now} {message}{Environment.NewLine}");
         }
 
-        private static void PrintAll(DateTime date, ToDoListRepository repo)
+        private void PrintAll(DateTime date)
         {
-            var toDoList = repo.GetList(date);
+            var toDoList = Repository.GetList(date);
             if (toDoList.Count() == 0)
                 Console.WriteLine($"Cписок дел пуст\n");
             else

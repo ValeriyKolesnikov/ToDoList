@@ -1,39 +1,12 @@
 ﻿
-using ToDoListLibrary;
 using ToDoList;
-using ToDoListLibrary.Exceptions;
 
-var repo = new ToDoListRepository();
-var today = DateOnly.FromDateTime(DateTime.Now).ToString();
+
+var service = new ToDoListConsoleService();
 
 try
 {      
-    ToDoListConsoleService.WorkingWithToDoRepository(repo);
-}
-
-catch(InputException ex)
-{
-    Console.WriteLine(ex.Message);
-}
-
-catch (NotFoundToDoException ex)
-{
-    Console.WriteLine(ex.Message);
-}
-
-catch (DeleteException ex)
-{
-    Console.WriteLine(ex.Message);
-}
-
-catch (ExistingToDoException ex)
-{
-    Console.WriteLine(ex.Message);
-}
-
-catch (ValidateException ex)
-{
-    Console.WriteLine(ex.Message);
+    service.WorkingWithToDoRepository();
 }
 
 catch (Exception ex)
