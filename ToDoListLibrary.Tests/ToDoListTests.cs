@@ -17,14 +17,14 @@ namespace ToDoListLibrary.Tests
         public void AddListTest()
         {
             var list = new List<ToDo>()
-            { new ToDo ("Дело 1", TimeOnly.Parse("15:00"), "Очень важное дело") };
+            { new ToDo ("Дело 1", TimeOnly.Parse("15:00")) };
             repo.AddList(today,list);
             Assert.IsTrue(repo.GetList(today)
                 .Any(x => x.Name.Equals("Дело 1") && x.StartTime.ToString().Equals("15:00")));
             Assert.That(repo.GetList(today).Count().Equals(1));
             list = new List<ToDo>()
-            { new ToDo ("Дело 2", TimeOnly.Parse("14:00"), "Не менее важное дело"),
-              new ToDo ("Дело 3", TimeOnly.Parse("13:00"), "Менее важное дело")};
+            { new ToDo ("Дело 2", TimeOnly.Parse("14:00")),
+              new ToDo ("Дело 3", TimeOnly.Parse("13:00"))};
             repo.AddList(today, list);
             Assert.That(repo.GetList(today).Count().Equals(2));
             Assert.IsFalse(repo.GetList(today)
@@ -36,7 +36,7 @@ namespace ToDoListLibrary.Tests
         {
             var yesterday = today.AddDays(-1);
             var list = new List<ToDo>()
-            { new ToDo ("Дело 4", TimeOnly.Parse("12:00"), "Это вчерашнее дело") };
+            { new ToDo ("Дело 4", TimeOnly.Parse("12:00")) };
             repo.AddList(yesterday, list);
             repo.AddListAsYesterday();
             var listToday = repo.GetList(today).ToList();
@@ -51,7 +51,7 @@ namespace ToDoListLibrary.Tests
         [Test]
         public void AddItemTest()
         {
-            var toDo = new ToDo("Дело 5", TimeOnly.Parse("11:00"), "Нужно добавить это дело");
+            var toDo = new ToDo("Дело 5", TimeOnly.Parse("11:00"));
             repo.AddToDo(toDo);
             var list = repo.GetList(today).ToList();
             Assert.That(list.Count().Equals(1));
@@ -65,10 +65,10 @@ namespace ToDoListLibrary.Tests
         [Test]
         public void AddItemInListTest()
         {
-            var toDo = new ToDo("Дело 14", TimeOnly.Parse("16:00"), "Нужно добавить дело в список");
+            var toDo = new ToDo("Дело 14", TimeOnly.Parse("16:00"));
             var list = new List<ToDo>()
-            { new ToDo ("Дело 15", TimeOnly.Parse("16:00"), "Дело первое"),
-            new ToDo ("Дело 16", TimeOnly.Parse("17:00"), "Дело второе")};            
+            { new ToDo ("Дело 15", TimeOnly.Parse("16:00")),
+            new ToDo ("Дело 16", TimeOnly.Parse("17:00"))};            
             repo.AddToDoInList(toDo,list);
             Assert.That(list.Count().Equals(3));
             Assert.IsTrue(list[2].Equals(toDo));
@@ -77,7 +77,7 @@ namespace ToDoListLibrary.Tests
         [Test]
         public void ReadItemTest()
         {
-            var toDo = new ToDo("Дело 6", TimeOnly.Parse("10:00"), "Нужно прочитать это дело");
+            var toDo = new ToDo("Дело 6", TimeOnly.Parse("10:00"));
             var list = new List<ToDo>() {toDo};
             repo.AddList(today,list);
             Assert.IsTrue(repo.Read(toDo.Name).Equals(toDo));
@@ -86,7 +86,7 @@ namespace ToDoListLibrary.Tests
         [Test]
         public void DeleteItemTest()
         {
-            var toDo = new ToDo("Дело 7", TimeOnly.Parse("19:00"), "Нужно удалить это дело");
+            var toDo = new ToDo("Дело 7", TimeOnly.Parse("19:00"));
             var list = new List<ToDo>() { toDo };
             repo.AddList(today, list);
             Assert.That(repo.GetList(today).ToList().Count().Equals(1));
@@ -97,10 +97,10 @@ namespace ToDoListLibrary.Tests
         [Test]
         public void UpdateItemTest()
         {
-            var toDo = new ToDo("Дело 8", TimeOnly.Parse("19:00"), "Нужно обновить это дело");
+            var toDo = new ToDo("Дело 8", TimeOnly.Parse("19:00"));
             var list = new List<ToDo>() { toDo };
             repo.AddList(today, list);     
-            var updateToDo = new ToDo("Дело 8", TimeOnly.Parse("14:00"), "Это обновленное дело");
+            var updateToDo = new ToDo("Дело 8", TimeOnly.Parse("14:00"));
             repo.Update(repo.Read(toDo.Name), updateToDo);
             Assert.That(repo.GetList(today).ToList().Count().Equals(1));
             Assert.IsTrue(repo.Read(updateToDo.Name).Equals(updateToDo));
@@ -111,7 +111,7 @@ namespace ToDoListLibrary.Tests
         {
             var yesterday = today.AddDays(-1);
             var list = new List<ToDo>()
-            { new ToDo ("Дело 9", TimeOnly.Parse("05:00"), "Это раннее дело") };
+            { new ToDo ("Дело 9", TimeOnly.Parse("05:00")) };
             repo.AddList(today, list);
             repo.AddList(yesterday, list);
             repo.DeleteList(today);            
@@ -122,7 +122,7 @@ namespace ToDoListLibrary.Tests
         [Test]
         public void ChangeStatusTest()
         {
-            var toDo = new ToDo("Дело 10", TimeOnly.Parse("10:00"), "Это дело открыто");
+            var toDo = new ToDo("Дело 10", TimeOnly.Parse("10:00"));
             var list = new List<ToDo>() { toDo };
             repo.AddList(today, list);
             var firstStatus = repo.Read(toDo.Name).Status;
@@ -138,9 +138,9 @@ namespace ToDoListLibrary.Tests
         public void CloseAllItemTest()
         {
             var list = new List<ToDo>()
-            { new ToDo ("Дело 11", TimeOnly.Parse("20:00"), "Важное дело"),
-              new ToDo ("Дело 12", TimeOnly.Parse("16:00"), "Не важное дело"),
-              new ToDo ("Дело 13", TimeOnly.Parse("18:00"), "Очень важное дело")};
+            { new ToDo ("Дело 11", TimeOnly.Parse("20:00")),
+              new ToDo ("Дело 12", TimeOnly.Parse("16:00")),
+              new ToDo ("Дело 13", TimeOnly.Parse("18:00"))};
             repo.AddList(today, list);
             Assert.IsTrue(repo.GetList(today).Any(toDo => toDo.Status.Equals(ToDoStatus.OPEN)));
             repo.CloseAll();

@@ -79,13 +79,13 @@ namespace ToDoList
         private void Add()
         {
             InputConstruсtor();
-            Repository.AddToDo(new ToDo(name!, time!, description!));
+            Repository.AddToDo(new ToDo(name!, time!));
         }
 
         private void Add(List<ToDo> list)
         {
             InputConstruсtor();           
-            Repository.AddToDoInList(new ToDo(name!, time!, description!), list);
+            Repository.AddToDoInList(new ToDo(name!, time!), list);
         }
 
         private void Create(DateTime date)
@@ -112,7 +112,7 @@ namespace ToDoList
             Console.WriteLine("Введите новые параметры");
             if (toDo == null)
                 throw new NotFoundToDoException(name!);
-            Repository.Update(toDo, new ToDo(name!, time!, description!));
+            Repository.Update(toDo, new ToDo(name!, time!));
         }
 
         private void InputConstruсtor()

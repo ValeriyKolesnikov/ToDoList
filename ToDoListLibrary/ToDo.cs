@@ -4,13 +4,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ToDoListLibrary
 {
-    public class ToDo : IComparable<ToDo>
+    public class ToDo : IComparable<ToDo>, ICloneable
     {
-        public ToDo(string name, TimeOnly startTime, string description)
+        public ToDo(string name, TimeOnly startTime)
         {
             Name = name;             
             StartTime = startTime;
-            Description = description;
             Status = ToDoStatus.OPEN;
         }
 
@@ -19,8 +18,6 @@ namespace ToDoListLibrary
         [JsonConverter(typeof(TimeOnlyConverter))]
         public TimeOnly StartTime { get; init; }
         public ToDoStatus Status { get; private set; }
-        [StringLength(100, MinimumLength = 0, ErrorMessage = "Описание должно содержать до 100 символов")]
-        public string Description { get; set; }
 
         /// <summary>
         /// Метод возвращает список свойств класса в формате List
@@ -32,7 +29,6 @@ namespace ToDoListLibrary
             $"\nДело:",
             $"{Name}",
             $"Время: {StartTime}",
-            $"Описание: {Description}",
             $"Статус: {GetStatus(this)}"};
         }
 
@@ -76,5 +72,7 @@ namespace ToDoListLibrary
         {
             return HashCode.Combine(Name, StartTime);
         }
+
+        public object Clone() => MemberwiseClone();
     }
 }
