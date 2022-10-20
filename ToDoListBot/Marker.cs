@@ -11,6 +11,7 @@ namespace ToDoListBot
         IS_MENU,
         IS_ADDED_TODO,
         IS_NAME_INPUT,
-        IS_TIME_INPUT
+        IS_TIME_INPUT,
+        IS_DATE_INPUT
     }
 }

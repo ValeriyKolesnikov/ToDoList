@@ -15,9 +15,23 @@ namespace ToDoListLibrary
         private DateTime _today; 
         #endregion
 
+        public string UserName { get; set; }
+
         public ToDoListRepository()
         {
+            UserName = "User";
             _today = DateTime.Today;
+            if (File.Exists(FileNameDataSet()))
+                this.Load();
+            else
+                _toDoListMap = new Dictionary<DateTime, List<ToDo>>();
+        }
+
+
+        public ToDoListRepository(string userName)
+        {
+            _today = DateTime.Today;
+            UserName = userName;
             if (File.Exists(FileNameDataSet()))
                 this.Load();
             else 
@@ -205,7 +219,7 @@ namespace ToDoListLibrary
         /// Метод возвращает абсолютный путь файла с данными репозитория
         /// </summary>
         /// <returns></returns>
-        private static string FileNameDataSet() => Path.GetFullPath("ToDoListMapDataset.json");
+        private string FileNameDataSet() => Path.GetFullPath($"{UserName}.json");
         
         /// <summary>
         /// Метод сериализует данные репозитория в json-файл 

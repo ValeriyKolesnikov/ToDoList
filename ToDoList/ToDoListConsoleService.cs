@@ -12,7 +12,6 @@ namespace ToDoList
     {
         private string? name;
         private TimeOnly time;
-        private string? description;
         private DateTime _today;
         public ToDoListRepository Repository { get; set; }
 
@@ -119,7 +118,6 @@ namespace ToDoList
         {
             name = InputName();
             time = InputTime();
-            description = InputDescription();
         }
 
         private string InputName()
@@ -127,12 +125,6 @@ namespace ToDoList
             Console.WriteLine("Введите наименование дела:");
             return Console.ReadLine();
         }
-
-        private string InputDescription()
-        {
-            Console.WriteLine("Введите описание дела:");
-            return Console.ReadLine();
-        }        
 
         private DateTime InputDate()
         {
