@@ -17,7 +17,7 @@ namespace ToDoList
 
         public ToDoListConsoleService()
         {
-            Repository = new ToDoListRepository();
+            Repository = new ToDoListRepository("kolesnik1988");
             _today = DateTime.Today;
         }
 

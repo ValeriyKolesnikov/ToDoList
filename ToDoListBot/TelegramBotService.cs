@@ -9,8 +9,12 @@ using ToDoListLibrary;
 
 namespace ToDoListBot
 {
+    /// <summary>
+    /// Класс-сервис работы со списком дел через телеграмм-бот
+    /// </summary>
     internal class TelegramBotService
     {
+        #region Приватные поля
         private Dictionary<long, Marker> _markers;
         private Dictionary<long, ToDoListRepository> _repos;
         private Dictionary<long, string> _names;
@@ -23,7 +27,7 @@ namespace ToDoListBot
         private static List<ToDo> _toDoList;        
         private static string _name;
         private static TimeOnly _startTime;
-        private DateTime _date;
+        #endregion
 
         public TelegramBotService()
         {
@@ -36,6 +40,10 @@ namespace ToDoListBot
             _toDoList = new();
         }
 
+        /// <summary>
+        /// Метод возвращает отформатированный список дел на заданную дату для вывода в чате
+        /// </summary>
+
         private string GetList(DateTime date, ToDoListRepository repo)
         {
             var list = string.Join(Environment.NewLine, repo.GetList(date));
@@ -44,6 +52,10 @@ namespace ToDoListBot
             return list;
         }
 
+        /// <summary>
+        /// Метод для работы с репозиторием списков дел с помощью бота
+        /// </summary>
+        /// <param name="bot"></param>
         public void WorkingWithRepository(ITelegramBotClient bot)
         {
             var cts = new CancellationTokenSource();
@@ -63,11 +75,19 @@ namespace ToDoListBot
             Console.ReadKey();
         }
 
+        /// <summary>
+        /// Метод - обработчик ошибок
+        /// </summary>
+
         private static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken token)
         {
             Console.WriteLine(exception.ToString());
             return Task.CompletedTask;
         }
+
+        /// <summary>
+        /// Метод - обработчик входных данных
+        /// </summary>
 
         private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken token)
         {
@@ -75,26 +95,7 @@ namespace ToDoListBot
             if (update.Type == UpdateType.Message && update?.Message?.Text != null)
             {
                 var key = update.Message.Chat.Id;
-                if (_markers.ContainsKey(key))
-                {
-                    _marker = _markers[key];
-                    _repository = _repos[key];
-                    if (_toDoLists.ContainsKey(key))
-                        _toDoList = _toDoLists[key];
-                    if (_names.ContainsKey(key))
-                        _name = _names[key];
-                }
-                else
-                {
-                    _marker = Marker.IS_MENU;
-                    _markers.Add(key, _marker);
-                    var userName = update.Message.Chat.Username;
-                    if (userName == null)
-                        userName = key.ToString();
-                    _repository = new ToDoListRepository(userName);
-                    _repos.Add(key, _repository);
-                }               
-
+                await InitializeFields(update, key);
                 switch (_marker)
                 {
                     case Marker.IS_MENU:
@@ -119,9 +120,10 @@ namespace ToDoListBot
             }
             return;
         }
-
- 
-
+              
+        /// <summary>
+        /// Метод для добавления нового дела в список
+        /// </summary>
         private async Task AddToDo(Update update, ITelegramBotClient botClient)
         {
             if (update.Message.Text.Equals("y", StringComparison.InvariantCultureIgnoreCase))
@@ -139,14 +141,17 @@ namespace ToDoListBot
             }
         }
 
+        /// <summary>
+        /// Метод для работы со списком основных команд в меню бота
+        /// </summary>
         private async Task SelectMenu(Update update, ITelegramBotClient botClient)
         {
             if (update.Message.Text.Equals("/start", StringComparison.InvariantCultureIgnoreCase))
             {
                 ReplyKeyboardMarkup keyboard = new(new[]
                 {
-                                new KeyboardButton[] {"/start", "/print"},
-                                new KeyboardButton[] {"/addlist", "/add", "/old"}
+                                new KeyboardButton[] {"/start", "/print","/addlist"},
+                                new KeyboardButton[] {"/copy", "/add", "/old"}
                             })
                 {
                     ResizeKeyboard = true
@@ -180,8 +185,19 @@ namespace ToDoListBot
                 _marker = Marker.IS_DATE_INPUT;
                 return;
             }
+            if (update.Message.Text.Equals("/copy", StringComparison.InvariantCultureIgnoreCase))
+            {
+                _repository.AddListAsYesterday();
+                await botClient.SendTextMessageAsync(update.Message.Chat, "Добавлен список дел на сегодня");
+
+                return;
+            }
+
         }
 
+        /// <summary>
+        /// Метод для ввода названия дела через бот
+        /// </summary>
         private async Task InputName(Update update, ITelegramBotClient botClient)
         {
             _name = update.Message.Text;
@@ -190,6 +206,9 @@ namespace ToDoListBot
             return;
         }
 
+        /// <summary>
+        /// Метод для ввода времени начала дела через бот
+        /// </summary>
         private async Task InputTime(Update update, ITelegramBotClient botClient)
         {
             var input = update.Message.Text;
@@ -205,6 +224,9 @@ namespace ToDoListBot
             return;
         }
 
+        /// <summary>
+        /// Метод для ввода даты через бот
+        /// </summary>
         private async Task InputDate(Update update, ITelegramBotClient botClient)
         {
             var input = update.Message.Text;
@@ -217,6 +239,32 @@ namespace ToDoListBot
             else
                 await botClient.SendTextMessageAsync(update.Message.Chat, "Неверный формат даты\nВведите дату в формате \"dd.MM.yyyy\"");
             return;
+        }
+
+        /// <summary>
+        /// Метод приводит поля в соответсвие с текущим пользователем
+        /// </summary>
+        private async Task InitializeFields(Update update, long key)
+        {
+            if (_markers.ContainsKey(key))
+            {
+                _marker = _markers[key];
+                _repository = _repos[key];
+                if (_toDoLists.ContainsKey(key))
+                    _toDoList = _toDoLists[key];
+                if (_names.ContainsKey(key))
+                    _name = _names[key];
+            }
+            else
+            {
+                _marker = Marker.IS_MENU;
+                _markers.Add(key, _marker);
+                var userName = update.Message.Chat.Username;
+                if (userName == null)
+                    userName = key.ToString();
+                _repository = new ToDoListRepository(userName);
+                _repos.Add(key, _repository);
+            }
         }
     }
 }

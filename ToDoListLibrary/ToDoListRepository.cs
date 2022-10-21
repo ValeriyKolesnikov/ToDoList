@@ -106,6 +106,8 @@ namespace ToDoListLibrary
         {
             var yesterday = _today.AddDays(-1);
             AddList(_today, new List<ToDo>(_toDoListMap[yesterday]));
+            OpenAll();
+            this.Save();
             Notify?.Invoke($"Добавлен новый список дел на {_today.Date}");
         }
 
@@ -215,6 +217,17 @@ namespace ToDoListLibrary
             Notify?.Invoke($"Все дела на сегодня закрыты");
         }
 
+        /// <summary>
+        /// Метод  открывает все закрытые дела
+        /// </summary>
+        private void OpenAll()
+        {
+            var listToday = GetToDoListToday();
+            foreach (ToDo item in listToday)
+                if (item.Status == ToDoStatus.CLOSED)
+                    item.ChangeStatus();
+            this.Save();
+        }
         /// <summary>
         /// Метод возвращает абсолютный путь файла с данными репозитория
         /// </summary>
