@@ -34,7 +34,7 @@ namespace ToDoListLibrary
         public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
         {
             if (value is TimeOnly time)
-                writer.WriteValue(time.ToString());
+                writer.WriteValue(time.ToString("HH:mm"));
         }
     }
 }

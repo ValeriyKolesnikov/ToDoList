@@ -10,7 +10,7 @@ namespace ToDoListLibrary.Tests
         [SetUp]
         public void Setup()
         {
-            repo = new ToDoListRepository(22); 
+            repo = new ToDoListRepository(); 
         }
 
         [Test]
@@ -92,18 +92,6 @@ namespace ToDoListLibrary.Tests
             Assert.That(repo.GetList(today).ToList().Count().Equals(1));
             repo.Delete(toDo.Name);
             Assert.That(repo.GetList(today).ToList().Count().Equals(0));
-        }
-
-        [Test]
-        public void UpdateItemTest()
-        {
-            var toDo = new ToDo("Дело 8", TimeOnly.Parse("19:00"));
-            var list = new List<ToDo>() { toDo };
-            repo.AddList(today, list);     
-            var updateToDo = new ToDo("Дело 8", TimeOnly.Parse("14:00"));
-            repo.Update(repo.Read(toDo.Name), updateToDo);
-            Assert.That(repo.GetList(today).ToList().Count().Equals(1));
-            Assert.IsTrue(repo.Read(updateToDo.Name).Equals(updateToDo));
         }
 
         [Test]

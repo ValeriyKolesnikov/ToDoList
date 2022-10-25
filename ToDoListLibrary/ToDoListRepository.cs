@@ -94,7 +94,7 @@ namespace ToDoListLibrary
         public void AddList(DateTime date, List<ToDo> list)
         {
             _toDoListMap[date] = list;
-            list.Sort();
+            SortList(list);
             this.Save();
             Notify?.Invoke($"Добавлен новый список дел на {date.Date}");
         }
@@ -128,7 +128,7 @@ namespace ToDoListLibrary
                         throw new ExistingToDoException(toDo);
                     }
                 listToday.Add(item);
-                listToday.Sort();
+                SortList(listToday);
             } else
             {
                 listToday = new List<ToDo>() {item};
@@ -156,32 +156,12 @@ namespace ToDoListLibrary
         /// </summary>
         public void Delete(string name)
         {
+            var list = GetToDoListToday();
             var toDo = Read(name);
-            GetToDoListToday().RemoveAll(toDo => toDo.Name.Equals(name, StringComparison.CurrentCulture));
+            list.RemoveAll(toDo => toDo.Name.Equals(name, StringComparison.CurrentCulture));
+            SortList(list);
             this.Save();
             Notify?.Invoke($"Удалено дело: {toDo.Name}");
-        }
-
-        /// <summary>
-        /// Метод вносит изменения в заданное дело из списка дел на сегодня
-        /// </summary>
-        /// <exception cref="NotFoundToDoException"></exception>
-        public void Update(ToDo item, ToDo updateItem)
-        {
-            AttributValidate(item);
-            AttributValidate(updateItem);
-            var listToday = GetToDoListToday();
-            for (int i = 0; i < listToday.Count; i++)
-            {
-                if (listToday[i].Equals(item))
-                {
-                    listToday[i] = updateItem;
-                    this.Save();
-                    Notify?.Invoke($"Обновлено дело: {item.Name}");
-                    return;
-                }                
-            }
-            throw new NotFoundToDoException(item.Name);
         }
 
         /// <summary>
@@ -195,13 +175,28 @@ namespace ToDoListLibrary
         }
 
         /// <summary>
-        /// Метод изменяет статус выполнения дела на противоположный
+        /// Метод p
         /// </summary>
         public void ChangeStatus(string name)
-        {         
-            Read(name).ChangeStatus();
+        {
+            var status = Read(name).Status;
+            if (status == ToDoStatus.OPEN)
+            {
+                Read(name).Status = ToDoStatus.CLOSED;
+            }
+            else if (status == ToDoStatus.CLOSED)
+            {
+                Read(name).Status = ToDoStatus.OPEN;
+            }
             this.Save();
             Notify?.Invoke($"Изменен статус дела: {name}");
+        }
+
+        public void CancelToDo(string name)
+        {
+            Read(name).Status = ToDoStatus.NO;            
+            this.Save();
+            Notify?.Invoke($"Дело \"{name}\" отмечено как \"Не буду выполнять\"");
         }
 
         /// <summary>
@@ -212,7 +207,7 @@ namespace ToDoListLibrary
             var listToday = GetToDoListToday();
             foreach (ToDo item in listToday)
             if (item.Status == ToDoStatus.OPEN) 
-                    item.ChangeStatus();
+                    ChangeStatus(item.Name);
             this.Save();
             Notify?.Invoke($"Все дела на сегодня закрыты");
         }
@@ -225,13 +220,22 @@ namespace ToDoListLibrary
             var listToday = GetToDoListToday();
             foreach (ToDo item in listToday)
                 if (item.Status == ToDoStatus.CLOSED)
-                    item.ChangeStatus();
+                    item.Status = ToDoStatus.OPEN;
             this.Save();
         }
+
+        private void SortList(List<ToDo> list)
+        {
+            list.Sort();
+            for (int i = 0; i < list.Count; i++)
+            {
+                list[i].Number = i + 1;
+            }
+        }
+
         /// <summary>
         /// Метод возвращает абсолютный путь файла с данными репозитория
         /// </summary>
-        /// <returns></returns>
         private string FileNameDataSet() => Path.GetFullPath($"{UserName}.json");
         
         /// <summary>
@@ -239,7 +243,7 @@ namespace ToDoListLibrary
         /// </summary>
         private void Save()
         {
-            var json = JsonConvert.SerializeObject(_toDoListMap);
+            var json = JsonConvert.SerializeObject(_toDoListMap, Formatting.Indented);
             File.WriteAllText(FileNameDataSet(), json);
         }
 

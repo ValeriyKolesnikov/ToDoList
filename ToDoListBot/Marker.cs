@@ -12,6 +12,9 @@ namespace ToDoListBot
         IS_ADDED_TODO,
         IS_NAME_INPUT,
         IS_TIME_INPUT,
-        IS_DATE_INPUT
+        IS_DATE_INPUT,
+        IS_CHANGE_STATUS,
+        IS_DELETED,
+        IS_CANCELLED
     }
 }

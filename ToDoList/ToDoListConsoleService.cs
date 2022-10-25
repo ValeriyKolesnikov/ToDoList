@@ -56,9 +56,6 @@ namespace ToDoList
                     case "add":
                         Add();
                         break;
-                    case "update":
-                        UpdateToDo();
-                        break;
                     case "status":
                         name = InputName();
                         Repository.ChangeStatus(name);
@@ -102,16 +99,6 @@ namespace ToDoList
                 else Console.WriteLine("Такой команды не существует! Повторите ввод:");
             }
             Repository.AddList(date, listToDo);
-        }
-
-        private void UpdateToDo()
-        {
-            InputName();
-            var toDo = Repository.Read(name!);
-            Console.WriteLine("Введите новые параметры");
-            if (toDo == null)
-                throw new NotFoundToDoException(name!);
-            Repository.Update(toDo, new ToDo(name!, time!));
         }
 
         private void InputConstruсtor()
@@ -179,7 +166,6 @@ namespace ToDoList
                           "old - вывести список дел из архива\n" +
                           "add - добавить дело в список\n" +
                           "delete - удалить дело из списка\n" +
-                          "update - обновить дело\n" +
                           "status - поменять стаус дела\n" +
                           "close - закрыть все дела\n" +
                           "exit - выход\n");

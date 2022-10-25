@@ -9,6 +9,7 @@ namespace ToDoListLibrary
     public enum ToDoStatus
     {
         OPEN,
-        CLOSED
+        CLOSED,
+        NO
     }
 }
