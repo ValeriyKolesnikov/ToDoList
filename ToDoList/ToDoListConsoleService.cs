@@ -10,8 +10,8 @@ namespace ToDoList
 {
     internal class ToDoListConsoleService
     {
-        private string? name;
-        private TimeOnly time;
+        private string? _name;
+        private TimeOnly _time;
         private DateTime _today;
         public ToDoListRepository Repository { get; set; }
 
@@ -26,7 +26,6 @@ namespace ToDoList
             Repository.Notify += (message) => Console.WriteLine(message);
             Repository.Notify += WritingToFile;
             string command;
-            List<ToDo> list;
             do
             {
                 PrintMenuToDoRepository();
@@ -50,15 +49,15 @@ namespace ToDoList
                         PrintAll(date);
                         break;
                     case "delete":
-                        name = InputName();
-                        Repository.Delete(name);
+                        _name = InputName();
+                        Repository.Delete(_name);
                         break;
                     case "add":
                         Add();
                         break;
                     case "status":
-                        name = InputName();
-                        Repository.ChangeStatus(name);
+                        _name = InputName();
+                        Repository.ChangeStatus(_name);
                         break;
                     case "close":
                         Repository.CloseAll();
@@ -75,13 +74,13 @@ namespace ToDoList
         private void Add()
         {
             InputConstruсtor();
-            Repository.AddToDo(new ToDo(name!, time!));
+            Repository.AddToDo(new ToDo(_name!, _time!));
         }
 
         private void Add(List<ToDo> list)
         {
             InputConstruсtor();           
-            Repository.AddToDoInList(new ToDo(name!, time!), list);
+            Repository.AddToDoInList(new ToDo(_name!, _time!), list);
         }
 
         private void Create(DateTime date)
@@ -103,8 +102,8 @@ namespace ToDoList
 
         private void InputConstruсtor()
         {
-            name = InputName();
-            time = InputTime();
+            _name = InputName();
+            _time = InputTime();
         }
 
         private string InputName()

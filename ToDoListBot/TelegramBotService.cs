@@ -1,5 +1,6 @@
 ﻿
 using Newtonsoft.Json;
+using System.Timers;
 using Telegram.Bot;
 using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
@@ -16,35 +17,62 @@ namespace ToDoListBot
     {
         #region Приватные поля
         private Dictionary<long, Marker> _markers;
-        private Dictionary<long, ToDoListRepository> _repos;
+        private static Dictionary<long, ToDoListRepository> _repos;
         private Dictionary<long, string> _names;
-        private Dictionary<long, List<ToDo>> _toDoLists;
-        private static string _menu;
+        private static string? _menu;
         private static Marker _marker;
         private static DateTime _today;
         private ToDoListRepository _repository;
-        private string _list;
-        private static List<ToDo> _toDoList;        
-        private static string _name;
+        private string? _list;
+        private static List<ToDo>? _toDoList;        
+        private static string? _name;
         private static TimeOnly _startTime;
         private static int _number;
+        private static System.Timers.Timer? _aTimer;
+        private static ITelegramBotClient? _botClient;
+        private static long _key;
+        const string Number = "Введите порядковый номер дела";
         #endregion
 
-        public TelegramBotService()
+        public TelegramBotService(ITelegramBotClient botClient)
         {
             _today = DateTime.Today;
             _menu = System.IO.File.ReadAllText(@"botMenu.txt");
             _markers = new();
             _repos = new();
-            _toDoLists = new();
             _names = new();
             _toDoList = new();
+            _botClient = botClient;
+        }
+
+        /// <summary>
+        /// Метод приводит поля в соответсвие с текущим пользователем
+        /// </summary>
+        private void InitializeFields(Update update)
+        {
+            if (_markers.ContainsKey(_key) && _repos.ContainsKey(_key))
+            {
+                _marker = _markers[_key];
+                _repository = _repos[_key];
+                _toDoList = _repository.GetList(_today).ToList();
+                if (_names.ContainsKey(_key))
+                    _name = _names[_key];
+            }
+            else
+            {
+                _marker = Marker.IS_MENU;
+                _markers.Add(_key, _marker);
+                var userName = update.Message?.Chat.Username;
+                if (userName == null)
+                    userName = _key.ToString();
+                _repository = new ToDoListRepository(userName);
+                _repos.Add(_key, _repository);
+            }
         }
 
         /// <summary>
         /// Метод возвращает отформатированный список дел на заданную дату для вывода в чате
         /// </summary>
-
         private string GetList(DateTime date, ToDoListRepository repo)
         {
             var list = string.Join(' ', repo.GetList(date));
@@ -52,12 +80,13 @@ namespace ToDoListBot
                 return "Cписок пуст";
             return list;
         }
-    /// <summary>
-    /// Метод для работы с репозиторием списков дел с помощью бота
-    /// </summary>
-    /// <param name="bot"></param>
-    public void WorkingWithRepository(ITelegramBotClient bot)
+
+        /// <summary>
+        /// Метод для работы с репозиторием списков дел с помощью бота
+        /// </summary>
+        public void WorkingWithRepository(ITelegramBotClient bot)
         {
+            SetTimer();
             var cts = new CancellationTokenSource();
             var cancellationToken = cts.Token;
             var receiverOptions = new ReceiverOptions
@@ -78,24 +107,23 @@ namespace ToDoListBot
         /// <summary>
         /// Метод - обработчик ошибок
         /// </summary>
-
         private static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken token)
         {
             Console.WriteLine(exception.ToString());
+            botClient.SendTextMessageAsync(_key, "Возникла ошибка");
             return Task.CompletedTask;
         }
 
         /// <summary>
         /// Метод - обработчик входных данных
         /// </summary>
-
         private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken token)
         {
             Console.WriteLine(JsonConvert.SerializeObject(update, Formatting.Indented));
             if (update.Type == UpdateType.Message && update?.Message?.Text != null)
             {
-                var key = update.Message.Chat.Id;
-                await InitializeFields(update,botClient, key);
+                _key = update.Message.Chat.Id;
+                InitializeFields(update);
                 switch (_marker)
                 {
                     case Marker.IS_MENU:
@@ -106,40 +134,26 @@ namespace ToDoListBot
                         break;
                     case Marker.IS_NAME_INPUT:
                         await InputName(update, botClient);
-                        _names[key] = _name;
                         break;
                     case Marker.IS_TIME_INPUT:
                         await InputTime(update, botClient);
-                        _toDoLists[key] = _toDoList;
                         break;
                     case Marker.IS_DATE_INPUT:
                         await InputDate(update, botClient);
                         break;
                     case Marker.IS_CHANGE_STATUS:
-                        await InputNumber(update, botClient);
-                        var name = _toDoList[_number - 1].Name;
-                        _repository.ChangeStatus(name);
-                        await botClient.SendTextMessageAsync(update.Message.Chat, $"Изменен статус дела \"{name}\".");
-                        _marker = Marker.IS_MENU;
+                        await ChangeStatus(update, botClient);
                         break;
                     case Marker.IS_DELETED:
-                        await InputNumber(update, botClient);
-                        name = _toDoList[_number - 1].Name;
-                        _repository.Delete(name);
-                        await botClient.SendTextMessageAsync(update.Message.Chat, $"Дело \"{name}\" удалено.");
-                        _marker = Marker.IS_MENU;
+                        await DeleteToDo(update, botClient);
                         break;
                     case Marker.IS_CANCELLED:
-                        await InputNumber(update, botClient);
-                        name = _toDoList[_number - 1].Name;
-                        _repository.CancelToDo(name);
-                        await botClient.SendTextMessageAsync(update.Message.Chat, $"Дело \"{name}\" помечено как \"Не буду выполнять\".");
-                        _marker = Marker.IS_MENU;
+                        await CancelToDo(update, botClient);
                         break;
                     default: 
                         return;
                 }
-                _markers[key] = _marker;
+                _markers[_key] = _marker;
             }
             return;
         }
@@ -149,19 +163,23 @@ namespace ToDoListBot
         /// </summary>
         private async Task AddToDo(Update update, ITelegramBotClient botClient)
         {
-            if (update.Message.Text.Equals("y", StringComparison.InvariantCultureIgnoreCase))
+            string message = update?.Message?.Text!;
+            if (message.Equals("y", StringComparison.InvariantCultureIgnoreCase))
             {
-                await botClient.SendTextMessageAsync(update.Message.Chat, "Введите название дела");
+                await botClient.SendTextMessageAsync(_key, "Введите название дела");
                 _marker = Marker.IS_NAME_INPUT;
                 return;
-            }
-            if (update.Message.Text.Equals("n", StringComparison.InvariantCultureIgnoreCase))
+            } 
+            else if (message.Equals("n", StringComparison.InvariantCultureIgnoreCase))
             {
                 _marker = Marker.IS_MENU;
                 _repository.AddList(_today, _toDoList);
                 await botClient.SendTextMessageAsync(update.Message.Chat, "Добавлен (обновлен) список дел");
                 return;
             }
+            else 
+                await botClient.SendTextMessageAsync(update.Message.Chat, "Неверрный ввод. Повторите ввод");
+            return;
         }
 
         /// <summary>
@@ -173,9 +191,8 @@ namespace ToDoListBot
             {
                 ReplyKeyboardMarkup keyboard = new(new[]
                 {
-                                new KeyboardButton[] {"/start", "/print","/addlist","/copy"},
-                                new KeyboardButton[] {"/notodo", "/add", "/old"},
-                                new KeyboardButton[] {"/status", "/allclose", "/del"}
+                                new KeyboardButton[] { "/start", "/print","/addlist", "/add", "/copy" },
+                                new KeyboardButton[] { "/old", "/status", "/allclose", "/notodo", "/del" }
                             })
                 {
                     ResizeKeyboard = true
@@ -223,19 +240,19 @@ namespace ToDoListBot
             }
             if (update.Message.Text.Equals("/status", StringComparison.InvariantCultureIgnoreCase))
             {
-                await botClient.SendTextMessageAsync(update.Message.Chat, "Введите порядковый номер дела");
+                await botClient.SendTextMessageAsync(update.Message.Chat, Number);
                 _marker = Marker.IS_CHANGE_STATUS;
                 return;
             }
             if (update.Message.Text.Equals("/del", StringComparison.InvariantCultureIgnoreCase))
             {
-                await botClient.SendTextMessageAsync(update.Message.Chat, "Введите порядковый номер дела");
+                await botClient.SendTextMessageAsync(update.Message.Chat, Number);
                 _marker = Marker.IS_DELETED;
                 return;
             }
             if (update.Message.Text.Equals("/cancel", StringComparison.InvariantCultureIgnoreCase))
             {
-                await botClient.SendTextMessageAsync(update.Message.Chat, "Введите порядковый номер дела");
+                await botClient.SendTextMessageAsync(update.Message.Chat, Number);
                 _marker = Marker.IS_CANCELLED;
                 return;
             }
@@ -249,6 +266,7 @@ namespace ToDoListBot
             _name = update.Message.Text;
             await botClient.SendTextMessageAsync(update.Message.Chat, "Введите время начала в формате \"HH:mm\"");
             _marker = Marker.IS_TIME_INPUT;
+            _names[_key] = _name;
             return;
         }
 
@@ -262,6 +280,7 @@ namespace ToDoListBot
             {
                 _startTime = time;
                 _toDoList.Add(new ToDo(_name, _startTime));
+                _repository.AddToDo(new ToDo(_name, _startTime));
                 _marker = Marker.IS_ADDED_TODO;
                 await botClient.SendTextMessageAsync(update.Message.Chat, "Дело добавлено. Добавить новое дело в список y / n?");
             }
@@ -287,6 +306,9 @@ namespace ToDoListBot
             return;
         }
 
+        /// <summary>
+        /// Метод для ввода порядкого номера через бот
+        /// </summary>
         private async Task InputNumber(Update update, ITelegramBotClient botClient)
         {
             var input = update.Message.Text;
@@ -300,31 +322,67 @@ namespace ToDoListBot
         }
 
         /// <summary>
-        /// Метод приводит поля в соответсвие с текущим пользователем
+        /// Метод для изменения статуса дела
         /// </summary>
-        private async Task InitializeFields(Update update, ITelegramBotClient botClient, long key)
+        private async Task ChangeStatus(Update update, ITelegramBotClient botClient)
         {
-            if (_markers.ContainsKey(key))
-            {
-                _marker = _markers[key];
-                _repository = _repos[key];
-                if (_toDoLists.ContainsKey(key))
-                    _toDoList = _toDoLists[key];
-                else _toDoList = _repository.GetList(_today).ToList();
-                if (_names.ContainsKey(key))
-                    _name = _names[key];
-            }
-            else
-            {
-                _marker = Marker.IS_MENU;
-                _markers.Add(key, _marker);
-                var userName = update.Message.Chat.Username;
-                if (userName == null)
-                    userName = key.ToString();
-                _repository = new ToDoListRepository(userName);
-                _repos.Add(key, _repository);
-            }
-            _repository.Notify += async (message) => await botClient.SendTextMessageAsync(update.Message.Chat, message);
+            await InputNumber(update, botClient);
+            var name = _toDoList[_number - 1].Name;
+            _repository.ChangeStatus(name);
+            await botClient.SendTextMessageAsync(update.Message.Chat, $"Изменен статус дела \"{name}\".");
+            _marker = Marker.IS_MENU;
         }
+        
+        /// <summary>
+         /// 
+         /// </summary>
+        private async Task DeleteToDo(Update update, ITelegramBotClient botClient)
+        {
+            await InputNumber(update, botClient);
+            var name = _toDoList[_number - 1].Name;
+            _repository.Delete(name);
+            await botClient.SendTextMessageAsync(update.Message.Chat, $"Удалено дело \"{name}\".");
+            _marker = Marker.IS_MENU;
+        }
+
+        /// <summary>
+        /// Метод помечает дело как "Не буду выполнять"
+        /// </summary>
+        private async Task CancelToDo(Update update, ITelegramBotClient botClient)
+        {
+            await InputNumber(update, botClient);
+            var name = _toDoList[_number - 1].Name;
+            _repository.CancelToDo(name);
+            await botClient.SendTextMessageAsync(update.Message.Chat, $"Дело \"{name}\" помечено как \"Не буду выполнять\".");
+            _marker = Marker.IS_MENU;
+        }
+
+        #region Методы для создания уведомлений
+        private static void SetTimer()
+        {
+            _aTimer = new System.Timers.Timer(60000);
+            _aTimer.Elapsed += OnTimedEvent;
+            _aTimer.AutoReset = true;
+            _aTimer.Enabled = true;
+        }
+
+        private static async void OnTimedEvent(Object source, ElapsedEventArgs e)
+        {
+            var timeNow = DateTime.Now;
+            var date = DateOnly.FromDateTime(timeNow);
+            var timeSpan = TimeSpan.FromMinutes(1);
+            IEnumerable<ToDo> list;
+            foreach (var repo in _repos)
+            {
+                list = repo.Value.GetList(_today);
+                foreach (ToDo toDo in list)
+                {
+                    var timeDifference = e.SignalTime - date.ToDateTime(toDo.StartTime);
+                    if (timeDifference < timeSpan && timeDifference > TimeSpan.Zero)
+                        await _botClient.SendTextMessageAsync(repo.Key, $"Напоминание: {toDo.StartTime} {toDo.Name}");
+                }
+            }
+        }
+        #endregion
     }
 }

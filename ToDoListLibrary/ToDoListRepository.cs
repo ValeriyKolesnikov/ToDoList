@@ -17,17 +17,6 @@ namespace ToDoListLibrary
 
         public string UserName { get; set; }
 
-        public ToDoListRepository()
-        {
-            UserName = "User";
-            _today = DateTime.Today;
-            if (File.Exists(FileNameDataSet()))
-                this.Load();
-            else
-                _toDoListMap = new Dictionary<DateTime, List<ToDo>>();
-        }
-
-
         public ToDoListRepository(string userName)
         {
             _today = DateTime.Today;
@@ -213,13 +202,13 @@ namespace ToDoListLibrary
         }
 
         /// <summary>
-        /// Метод  открывает все закрытые дела
+        /// Метод присваивает статус "Открыто" всем делам в списке
         /// </summary>
         private void OpenAll()
         {
             var listToday = GetToDoListToday();
             foreach (ToDo item in listToday)
-                if (item.Status == ToDoStatus.CLOSED)
+                if (item.Status != ToDoStatus.OPEN)
                     item.Status = ToDoStatus.OPEN;
             this.Save();
         }

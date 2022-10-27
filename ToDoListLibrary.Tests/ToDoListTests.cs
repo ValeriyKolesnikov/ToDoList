@@ -10,7 +10,7 @@ namespace ToDoListLibrary.Tests
         [SetUp]
         public void Setup()
         {
-            repo = new ToDoListRepository(); 
+            repo = new ToDoListRepository("testUser"); 
         }
 
         [Test]
