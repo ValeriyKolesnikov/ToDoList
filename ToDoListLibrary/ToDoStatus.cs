@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace ToDoListLibrary
 {
+    /// <summary>
+    /// Enum со статусами дел
+    /// </summary>
     public enum ToDoStatus
     {
         OPEN,

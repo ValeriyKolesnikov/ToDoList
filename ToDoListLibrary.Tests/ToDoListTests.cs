@@ -5,7 +5,7 @@ namespace ToDoListLibrary.Tests
     public class ToDoListTests
     {
         private ToDoListRepository repo;
-        private DateTime today = DateTime.Today;
+        private readonly DateTime today = DateTime.Today;
 
         [SetUp]
         public void Setup()
@@ -41,8 +41,8 @@ namespace ToDoListLibrary.Tests
             repo.AddListAsYesterday();
             var listToday = repo.GetList(today).ToList();
             var listYesterday = repo.GetList(yesterday).ToList();
-            Assert.IsTrue(listToday.Count().Equals(listYesterday.Count()));
-            for (int i = 0; i < listToday.Count(); i++)
+            Assert.IsTrue(listToday.Count.Equals(listYesterday.Count));
+            for (int i = 0; i < listToday.Count; i++)
             {
                 Assert.IsTrue(listToday[i].Equals(listYesterday[i]));
             }
@@ -60,18 +60,6 @@ namespace ToDoListLibrary.Tests
             repo.AddToDo(toDo);
             Assert.That(list.Count().Equals(1));
             Assert.IsTrue(list[0].Equals(toDo));
-        }
-
-        [Test]
-        public void AddItemInListTest()
-        {
-            var toDo = new ToDo("Дело 14", TimeOnly.Parse("16:00"));
-            var list = new List<ToDo>()
-            { new ToDo ("Дело 15", TimeOnly.Parse("16:00")),
-            new ToDo ("Дело 16", TimeOnly.Parse("17:00"))};            
-            repo.AddToDoInList(toDo,list);
-            Assert.That(list.Count().Equals(3));
-            Assert.IsTrue(list[2].Equals(toDo));
         }
 
         [Test]
@@ -133,6 +121,17 @@ namespace ToDoListLibrary.Tests
             Assert.IsTrue(repo.GetList(today).Any(toDo => toDo.Status.Equals(ToDoStatus.OPEN)));
             repo.CloseAll();
             Assert.IsFalse(repo.GetList(today).Any(toDo => toDo.Status.Equals(ToDoStatus.OPEN)));
+        }
+
+        [Test]
+        public void CancelItemTest()
+        {
+            var toDo = new ToDo("Дело 14", TimeOnly.Parse("14:00"));
+            var list = new List<ToDo>() { toDo };
+            repo.AddList(today, list);
+            Assert.IsTrue(repo.GetList(today).Any(toDo => toDo.Status.Equals(ToDoStatus.OPEN)));
+            repo.CancelToDo(toDo.Name);
+            Assert.IsTrue(repo.GetList(today).Any(toDo => toDo.Status.Equals(ToDoStatus.NO)));
         }
 
         [TearDown]

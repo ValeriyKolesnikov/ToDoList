@@ -10,52 +10,24 @@ namespace ToDoListLibrary
     /// </summary>
     public class ToDoListRepository
     {
-        #region Приватные поля и константы
+        #region Приватные поля
         private Dictionary<DateTime, List<ToDo>> _toDoListMap;
-        private DateTime _today; 
+        private readonly DateTime _today; 
         #endregion
-
         public string UserName { get; set; }
 
         public ToDoListRepository(string userName)
         {
             _today = DateTime.Today;
             UserName = userName;
+            _toDoListMap = new Dictionary<DateTime, List<ToDo>>();
             if (File.Exists(FileNameDataSet()))
-                this.Load();
-            else 
-                _toDoListMap = new Dictionary<DateTime, List<ToDo>>();
-        }        
-
-        /// <summary>
-        /// Метод осуществляет валидацию по атрибутам
-        /// </summary>
-        /// <exception cref="ValidateException"></exception>
-        private void AttributValidate(ToDo value)
-        {
-            var context = new ValidationContext(value);
-            var results = new List<ValidationResult>();
-            if (!Validator.TryValidateObject(value, context, results, true))
-            {
-                foreach (ValidationResult error in results)
-                {
-                    throw new ValidateException(value, error.ErrorMessage);
-                }
-            }
+                this.Load();        
         }
 
         /// <summary>
-        /// Метод возвращает список дел на сегодня.
-        /// Если список дел отсутствует, то сначала создает новый пустой список
+        /// Метод возвращает содержимое словаря со списками дел в формате "только для чтения"
         /// </summary>
-        private List<ToDo> GetToDoListToday()
-        {
-            if (!_toDoListMap.ContainsKey(_today))
-                _toDoListMap[_today] = new List<ToDo>();
-            return _toDoListMap[_today];
-        }
-
-        public event Action<string>? Notify;
         public IReadOnlyDictionary<DateTime, List<ToDo>> GetMap() => _toDoListMap;
 
         /// <summary>
@@ -66,38 +38,6 @@ namespace ToDoListLibrary
             if (_toDoListMap.ContainsKey(date))
                 return _toDoListMap[date];
             return Enumerable.Empty<ToDo>();
-        }
-        
-        /// <summary>
-        /// Метод добавляет заданное дело в заданный список дел
-        /// </summary>
-        public void AddToDoInList(ToDo toDo, List<ToDo> list)
-        {
-            AttributValidate(toDo);
-            list.Add(toDo);
-        }
-
-        /// <summary>
-        /// Метод добавляет заданный список дел на заданную дату
-        /// </summary>
-        public void AddList(DateTime date, List<ToDo> list)
-        {
-            _toDoListMap[date] = list;
-            SortList(list);
-            this.Save();
-            Notify?.Invoke($"Добавлен новый список дел на {date.Date}");
-        }
-
-        /// <summary>
-        /// Метод создает список дел на сегодня на основе вчерашнего дня
-        /// </summary>
-        public void AddListAsYesterday()
-        {
-            var yesterday = _today.AddDays(-1);
-            AddList(_today, new List<ToDo>(_toDoListMap[yesterday]));
-            OpenAll();
-            this.Save();
-            Notify?.Invoke($"Добавлен новый список дел на {_today.Date}");
         }
 
         /// <summary>
@@ -118,13 +58,34 @@ namespace ToDoListLibrary
                     }
                 listToday.Add(item);
                 SortList(listToday);
-            } else
+            }
+            else
             {
-                listToday = new List<ToDo>() {item};
+                listToday = new List<ToDo>() { item };
                 _toDoListMap[_today] = listToday;
             }
             this.Save();
-            Notify?.Invoke($"Добавлено новое дело: {item}");
+        }
+
+        /// <summary>
+        /// Метод добавляет заданный список дел на заданную дату
+        /// </summary>
+        public void AddList(DateTime date, List<ToDo> list)
+        {
+            _toDoListMap[date] = list;
+            SortList(list);
+            this.Save();
+        }
+
+        /// <summary>
+        /// Метод создает список дел на сегодня на основе вчерашнего дня
+        /// </summary>
+        public void AddListAsYesterday()
+        {
+            var yesterday = _today.AddDays(-1);
+            AddList(_today, new List<ToDo>(_toDoListMap[yesterday]));
+            OpenAll();
+            this.Save();
         }
 
         /// <summary>
@@ -150,7 +111,6 @@ namespace ToDoListLibrary
             list.RemoveAll(toDo => toDo.Name.Equals(name, StringComparison.CurrentCulture));
             SortList(list);
             this.Save();
-            Notify?.Invoke($"Удалено дело: {toDo.Name}");
         }
 
         /// <summary>
@@ -160,11 +120,10 @@ namespace ToDoListLibrary
         {
             _toDoListMap.Remove(date);
             this.Save();
-            Notify?.Invoke($"Удален список дел на {date}");
         }
 
         /// <summary>
-        /// Метод p
+        /// Метод изменяет статус дела 
         /// </summary>
         public void ChangeStatus(string name)
         {
@@ -178,14 +137,15 @@ namespace ToDoListLibrary
                 Read(name).Status = ToDoStatus.OPEN;
             }
             this.Save();
-            Notify?.Invoke($"Изменен статус дела: {name}");
         }
 
+        /// <summary>
+        /// Метод помечает дело как "Не буду выполнять"
+        /// </summary>
         public void CancelToDo(string name)
         {
             Read(name).Status = ToDoStatus.NO;            
             this.Save();
-            Notify?.Invoke($"Дело \"{name}\" отмечено как \"Не буду выполнять\"");
         }
 
         /// <summary>
@@ -198,9 +158,8 @@ namespace ToDoListLibrary
             if (item.Status == ToDoStatus.OPEN) 
                     ChangeStatus(item.Name);
             this.Save();
-            Notify?.Invoke($"Все дела на сегодня закрыты");
         }
-
+#region Приватные методы
         /// <summary>
         /// Метод присваивает статус "Открыто" всем делам в списке
         /// </summary>
@@ -213,7 +172,35 @@ namespace ToDoListLibrary
             this.Save();
         }
 
-        private void SortList(List<ToDo> list)
+        /// <summary>
+        /// Метод осуществляет валидацию по атрибутам
+        /// </summary>
+        /// <exception cref="ValidateException"></exception>
+        private static void AttributValidate(ToDo value)
+        {
+            var context = new ValidationContext(value);
+            var results = new List<ValidationResult>();
+            if (!Validator.TryValidateObject(value, context, results, true))
+            {
+                foreach (ValidationResult error in results)
+                {
+                    throw new ValidateException(value, error.ErrorMessage!);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Метод возвращает список дел на сегодня.
+        /// Если список дел отсутствует, то сначала создает новый пустой список
+        /// </summary>
+        private List<ToDo> GetToDoListToday()
+        {
+            if (!_toDoListMap.ContainsKey(_today))
+                _toDoListMap[_today] = new List<ToDo>();
+            return _toDoListMap[_today];
+        }
+
+        private static void SortList(List<ToDo> list)
         {
             list.Sort();
             for (int i = 0; i < list.Count; i++)
@@ -247,5 +234,6 @@ namespace ToDoListLibrary
                 _toDoListMap = new Dictionary<DateTime, List<ToDo>>(loadedList);
             else _toDoListMap = new Dictionary<DateTime, List<ToDo>>();
         }
+        #endregion
     }
 }

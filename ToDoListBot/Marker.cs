@@ -6,6 +6,10 @@ using System.Threading.Tasks;
 
 namespace ToDoListBot
 {
+    /// <summary>
+    /// Enum содержит маркеры, указывающие на какой стадии 
+    /// работы с ботом находится пользователь
+    /// </summary>
     internal enum Marker
     {
         IS_MENU,

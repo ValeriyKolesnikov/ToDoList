@@ -4,12 +4,23 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ToDoListLibrary
 {
+    /// <summary>
+    /// Класс, описывающий дело из списка дел 
+    /// </summary>
     public class ToDo : IComparable<ToDo>
     {
+        public int Number { get; set; }
+        [StringLength(20, MinimumLength = 1, 
+        ErrorMessage = "Наименование должно содержать от 1 до 20 символов")]
+        public string Name { get; init; }
+        [JsonConverter(typeof(TimeOnlyConverter))]
+        public TimeOnly StartTime { get; init; }
+        public ToDoStatus Status { get; set; }
+
         [JsonConstructor]
         public ToDo(string name, TimeOnly startTime, ToDoStatus status)
         {
-            Name = name;             
+            Name = name;
             StartTime = startTime;
             Status = status;
             Number = 1;
@@ -17,33 +28,10 @@ namespace ToDoListLibrary
 
         public ToDo(string name, TimeOnly startTime) : this(name, startTime, ToDoStatus.OPEN) { }
 
-        [Range(1,50, ErrorMessage = "Порядковый номер должен входить в диапазон [1..50)")]
-        public int Number { get; set; }
-        [StringLength(20, MinimumLength = 1, ErrorMessage = "Наименование должно содержать от 1 до 20 символов")]
-        public string Name { get; init; }
-        [JsonConverter(typeof(TimeOnlyConverter))]
-        public TimeOnly StartTime { get; init; }
-        public ToDoStatus Status { get; set; }
-
-        /// <summary>
-        /// Метод возвращает список свойств класса в формате List
-        /// </summary>
-        /// <returns></returns>
-        
-        private List<string> GetInfo()
-        {
-            return new List<string> {
-            $"\n{PrintStatus(this)}",            
-            $"{Number}. ",
-            $"{StartTime.ToString("HH:mm")} | ",
-            $"{Name}"};
-        }
-
         /// <summary>
         /// Метод возвращает статус выполнения в формате string
         /// </summary>
-
-        private string PrintStatus(ToDo toDo)
+        private static string PrintStatus(ToDo toDo)
         {
             if (toDo.Status == ToDoStatus.CLOSED)
                 return "[ + ]";
@@ -52,10 +40,23 @@ namespace ToDoListLibrary
             return "[    ]";
         }
 
+        /// <summary>
+        /// Метод возвращает список свойств класса в формате List
+        /// </summary>
+        private List<string> GetInfo()
+        {
+            return new List<string> {
+            $"\n{PrintStatus(this)}",            
+            $"{Number}. ",
+            $"{StartTime:HH:mm} | ",
+            $"{Name}"};
+        }
+
         public override string ToString() => string.Join("\t", this.GetInfo());
 
-        public int CompareTo(ToDo other)
+        public int CompareTo(ToDo? other)
         {
+            if (other == null) return 1;
             if (this.StartTime.Equals(other.StartTime))
                 return this.Name.CompareTo(other.Name);
             return StartTime.CompareTo(other.StartTime);

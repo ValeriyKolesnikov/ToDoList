@@ -3,13 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ToDoList", "ToDoList\ToDoList.csproj", "{06934B34-59C8-440F-B052-A5BB0F01D517}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ToDoListLibrary", "ToDoListLibrary\ToDoListLibrary.csproj", "{F6802502-7B73-4B13-81E4-977632185972}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ToDoListLibrary.Tests", "ToDoListLibrary.Tests\ToDoListLibrary.Tests.csproj", "{F31679ED-3038-415F-B271-C9B350E98DFD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToDoListBot", "ToDoListBot\ToDoListBot.csproj", "{2601A262-3514-4726-8A09-C1BB1E669738}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ToDoListBot", "ToDoListBot\ToDoListBot.csproj", "{2601A262-3514-4726-8A09-C1BB1E669738}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +15,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{06934B34-59C8-440F-B052-A5BB0F01D517}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{06934B34-59C8-440F-B052-A5BB0F01D517}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{06934B34-59C8-440F-B052-A5BB0F01D517}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{06934B34-59C8-440F-B052-A5BB0F01D517}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F6802502-7B73-4B13-81E4-977632185972}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F6802502-7B73-4B13-81E4-977632185972}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6802502-7B73-4B13-81E4-977632185972}.Release|Any CPU.ActiveCfg = Release|Any CPU

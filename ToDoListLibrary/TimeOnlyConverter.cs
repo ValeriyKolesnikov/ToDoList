@@ -10,7 +10,7 @@ namespace ToDoListLibrary
     /// <summary>
     /// Класс-конвертор типа TimeOnly в формат Json
     /// </summary>
-    internal class TimeOnlyConverter : JsonConverter
+    public class TimeOnlyConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {
@@ -25,7 +25,7 @@ namespace ToDoListLibrary
             {
                 return null;
             }
-            var strTime = reader.Value.ToString();
+            var strTime = reader.Value!.ToString();
             if (TimeOnly.TryParseExact(strTime, "HH:mm", out TimeOnly time))
                 return time;
             return null;
