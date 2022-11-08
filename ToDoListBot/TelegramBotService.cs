@@ -435,7 +435,7 @@ namespace ToDoListBot
                 foreach (ToDo toDo in list)
                 {
                     var timeDifference = e.SignalTime - date.ToDateTime(toDo.StartTime);
-                    if (timeDifference < timeSpan && timeDifference > TimeSpan.Zero)
+                    if (toDo.Status == ToDoStatus.OPEN && timeDifference < timeSpan && timeDifference > TimeSpan.Zero)
                         _botClient!.SendTextMessageAsync(repo.Key, $"Напоминание: {toDo.StartTime} {toDo.Name}");
                 }
             }
