@@ -10,8 +10,8 @@ namespace ToDoListLibrary
     public class ToDo : IComparable<ToDo>
     {
         public int Number { get; set; }
-        [StringLength(20, MinimumLength = 1, 
-        ErrorMessage = "Наименование должно содержать от 1 до 20 символов")]
+        [StringLength(40, MinimumLength = 1, 
+        ErrorMessage = "Наименование должно содержать от 1 до 40 символов")]
         public string Name { get; init; }
         [JsonConverter(typeof(TimeOnlyConverter))]
         public TimeOnly StartTime { get; init; }

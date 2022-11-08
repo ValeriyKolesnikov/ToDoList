@@ -41,28 +41,28 @@ namespace ToDoListLibrary
         }
 
         /// <summary>
-        /// Метод добавляет дело в список дел на сегодня
+        /// Метод добавляет дело в список дел на заданную дату
         /// </summary>
         /// <exception cref="ExistingToDoException"></exception>
-        public void AddToDo(ToDo item)
+        public void AddToDo(ToDo item, DateTime date)
         {
             AttributValidate(item);
-            List<ToDo> listToday;
-            if (_toDoListMap.ContainsKey(_today))
+            List<ToDo> list;
+            if (_toDoListMap.ContainsKey(date))
             {
-                listToday = _toDoListMap[_today];
-                foreach (ToDo toDo in listToday)
+                list = _toDoListMap[date];
+                foreach (ToDo toDo in list)
                     if (toDo.Equals(item))
                     {
                         throw new ExistingToDoException(toDo);
                     }
-                listToday.Add(item);
-                SortList(listToday);
+                list.Add(item);
+                SortList(list);
             }
             else
             {
-                listToday = new List<ToDo>() { item };
-                _toDoListMap[_today] = listToday;
+                list = new List<ToDo>() { item };
+                _toDoListMap[date] = list;
             }
             this.Save();
         }
